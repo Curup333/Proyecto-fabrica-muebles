@@ -1,6 +1,8 @@
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 def create_product(name, price, stock=0):
+    if not isinstance(name, str):
+        raise ValueError("El nombre tiene que ser texto")
     clean_name = name.strip()
     if not clean_name:
         raise ValueError("El nombre no puede estar vacio")
