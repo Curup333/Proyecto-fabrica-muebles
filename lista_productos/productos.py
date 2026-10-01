@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
+
 def create_product(name, price, stock=0):
     if not isinstance(name, str):
         raise ValueError("El nombre tiene que ser texto")
@@ -45,9 +46,48 @@ def validate_stock(product, units):
     return product
 
 
+def create_order(customer, items):
+    if not isinstance(customer, str):
+        raise ValueError("El nombre tiene que ser un texto valido")
+    clean_customer = customer.strip()
+    if not clean_customer:
+        raise ValueError("El nombre no puede estar vacio")
+
+    units_by_product = {}
+
+    for product, units in items:
+        validate_stock(product, units)
+        name = product["name"]
+        if name in units_by_product:
+            units_by_product[name][1] += int(units)
+        else:
+            units_by_product[name] = [product, int(units)]
+
+    items_list = []
+    total = Decimal("0")
+
+    for product, units in units_by_product.values():
+        validate_stock(product, units)
+        subtotal = product["price"] * units
+        total += subtotal
+        items_list.append({
+            "name": product["name"],
+            "units": units,
+            "price": product["price"],
+            "subtotal": subtotal,
+        })
+
+    return {"customer": clean_customer, "items": items_list, "total": total}
+
+
+def order_summary(order):
+    print(f"Cliente: {order['customer']}")
+    for item in order["items"]:
+        print(f"{item['name']} x{item['units']} - ${item['price']} = ${item['subtotal']}")
+    print(f"TOTAL: ${order['total']}")
+
 
 if __name__ == "__main__":
-    valery = create_product("valery", 2300, 10)
-    teresa = create_product("teresa", 150, 60)
-
-    print(validate_stock(valery, 2.5))
+    valery = create_product("valery", 3700, 10)
+    teresa = create_product("teresa", 130, 60)
+    order_summary(create_order("angel", [(valery, 3), (teresa, 6)]))

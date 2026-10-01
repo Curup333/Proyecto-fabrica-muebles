@@ -1,5 +1,5 @@
 import pytest
-from productos import create_product, validate_stock
+from productos import create_product, validate_stock, create_order, order_summary
 from decimal import Decimal
 
 # Validar stock
@@ -89,3 +89,45 @@ def test_create_product_precio_negativo_con_stock_valido(negativo):
 def test_create_product_stock_negativo_con_precio_valido(negativo):
     with pytest.raises(ValueError, match="stock"):
         create_product("teresa", 130, negativo)
+
+
+# Validar orden
+def test_create_order_total():
+    valery = create_product("valery", 3700, 10)
+    teresa = create_product("teresa", 130, 60)
+    order = create_order("angel", [(valery, 3), (teresa, 6)])
+    assert order["total"] == Decimal("11880.00")
+
+
+def test_create_order_producto_repetido_supera_stock():
+    valery = create_product("valery", 3700, 10)
+    with pytest.raises(ValueError, match="cantidades insuficientes"):
+        create_order("angel", [(valery, 6), (valery, 6)])
+
+
+def test_create_order_producto_repetido_se_suma():
+    valery = create_product("valery", 3700, 10)
+    order = create_order("angel", [(valery, 2), (valery, 3)])
+    assert len(order["items"]) == 1
+    assert order["items"][0]["units"] == 5
+
+
+@pytest.mark.parametrize("vacio", ["", " "])
+def test_create_order_cliente_vacio(vacio):
+    valery = create_product("valery", 3700, 10)
+    with pytest.raises(ValueError, match="no puede estar vacio"):
+        create_order(vacio, [(valery, 1)])
+
+
+def test_create_order_cliente_no_es_texto():
+    valery = create_product("valery", 3700, 10)
+    with pytest.raises(ValueError, match="tiene que ser un texto valido"):
+        create_order(None, [(valery, 1)])
+
+
+def test_order_summary_total_una_vez(capsys):
+    valery = create_product("valery", 3700, 10)
+    order_summary(create_order("angel", [(valery, 2)]))
+    salida = capsys.readouterr().out
+    assert salida.count("TOTAL:") == 1
+    assert "valery x2" in salida
